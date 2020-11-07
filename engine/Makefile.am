@@ -20,6 +20,7 @@
 engine_deepspeech_PYTHON = \
 	engine.py \
 	main.py \
+	mic_vad_streaming.py
 	$(NULL)
 engine_deepspeechdir = $(datadir)/ibus-deepspeech
 

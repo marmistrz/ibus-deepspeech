@@ -17,51 +17,65 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
+from typing import Optional
+from mic_vad_streaming import DictationThread
 
 import gi
 
-gi.require_version('IBus', '1.0')
+gi.require_version("IBus", "1.0")
 from gi.repository import IBus
-gi.require_version('Pango', '1.0')
-from gi.repository import Pango
-gi.require_version('Gst', '1.0')
-from gi.repository import GObject, Gst
 
-GObject.threads_init()
-Gst.init(None)
+gi.require_version("Gst", "1.0")
+from gi.repository import GLib
+
+MODEL_PATH = "/usr/share/mozilla/deepspeech/models/ds-model.pbmm"
+SCORER_PATH = "/usr/share/mozilla/deepspeech/models/ds-model.scorer"
+
 
 class EngineDeepSpeech(IBus.Engine):
-    __gtype_name__ = 'EngineDeepSpeech'
+    __gtype_name__ = "EngineDeepSpeech"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(EngineDeepSpeech, self).__init__()
         self.recording = False
-        self.__is_invalidate = False
-        self.__preedit_string = ""
+        self.worker_thread: Optional[DictationThread] = None
         self.__prop_list = IBus.PropList()
-        self.__prop_list.append(IBus.Property(key="toggle-recording", icon="audio-input-microphone", type=IBus.PropType.TOGGLE, state=0, tooltip="Toggle speech recognition"))
+        self.__prop_list.append(
+            IBus.Property(
+                key="toggle-recording",
+                icon="audio-input-microphone",
+                type=IBus.PropType.TOGGLE,
+                state=0,
+                label="Toggle speech recognition",
+            )
+        )
 
-        self.pipeline = Gst.parse_launch("pulsesrc ! audioconvert ! audiorate ! audioresample ! deepspeech silence-threshold=0.3 silence-length=20 ! fakesink")
-        self.bus = self.pipeline.get_bus()
-        self.bus.add_signal_watch()
-        self.bus.connect ("message", self.bus_message)
-
-    def do_focus_in(self):
+    def do_focus_in(self) -> None:
         self.register_properties(self.__prop_list)
 
-    def do_property_activate(self, prop_name, state):
-        if prop_name == 'toggle-recording':
-            self.recording = bool(state)
+    def do_property_activate(self, prop_name: str, state: IBus.PropState) -> None:
+        print(f"activate {prop_name}")
+        if prop_name == "toggle-recording":
+            self.recording = not self.recording
+            print(f"has {self.recording}")
             if self.recording:
-                self.pipeline.set_state(Gst.State.PLAYING)
+                self.start_recognition()
             else:
-                self.pipeline.set_state(Gst.State.PAUSED)
+                self.stop_recognition()
 
-    def bus_message(self, bus, message):
-        structure = message.get_structure()
-        if structure and structure.get_name() == "deepspeech":
-            text = structure.get_value("text")
-            self.commit_text(IBus.Text.new_from_string(text))
-        return True
+    def start_recognition(self) -> None:
+        print("Starting the recognition thread")
 
+        def callback(text: str) -> None:
+            print(f"Recognized: {text}")
+            if text:
+                self.commit_text(IBus.Text.new_from_string(text + ' '))
+
+        self.worker_thread = DictationThread(MODEL_PATH, SCORER_PATH, callback)
+        self.worker_thread.daemon = True
+        self.worker_thread.start()
+
+    def stop_recognition(self) -> None:
+        print("Stopping the recognition thread")
+        assert self.worker_thread
+        self.worker_thread.request_stop()

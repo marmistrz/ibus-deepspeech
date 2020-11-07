@@ -17,55 +17,56 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# for python2
-from __future__ import print_function
-
 import gi
 import os
 import sys
 import getopt
 import locale
 
-gi.require_version('IBus', '1.0')
+gi.require_version("IBus", "1.0")
 from gi.repository import IBus
 from gi.repository import GLib
 from gi.repository import GObject
 
 from engine import EngineDeepSpeech
 
+
 class IMApp:
-    def __init__(self, exec_by_ibus):
+    def __init__(self, exec_by_ibus: bool) -> None:
         engine_name = "deepspeech" if exec_by_ibus else "deepspeech (debug)"
-        self.__component = \
-                IBus.Component.new("org.freedesktop.IBus.DeepSpeech",
-                                   "DeepSpeech Speech Recognition Component",
-                                   "0.1.0",
-                                   "GPL",
-                                   "Mike Sheldon <elleo@gnu.org>",
-                                   "https://github.com/Elleo/ibus-deepspeech",
-                                   "/usr/bin/exec",
-                                   "ibus-deepspeech")
-        engine = IBus.EngineDesc.new("deepspeech",
-                                     engine_name,
-                                     "English Speech Recognition (DeepSpeech)",
-                                     "en",
-                                     "GPL",
-                                     "Mike Sheldon <elleo@gnu.org>",
-                                     "",
-                                     "us")
+        self.__component = IBus.Component.new(
+            "org.freedesktop.IBus.DeepSpeech",
+            "DeepSpeech Speech Recognition Component",
+            "0.1.0",
+            "GPL",
+            "Mike Sheldon <elleo@gnu.org>",
+            "https://github.com/Elleo/ibus-deepspeech",
+            "/usr/bin/exec",
+            "ibus-deepspeech",
+        )
+        engine = IBus.EngineDesc.new(
+            "deepspeech",
+            engine_name,
+            "English Speech Recognition (DeepSpeech)",
+            "en",
+            "GPL",
+            "Mike Sheldon <elleo@gnu.org>",
+            "",
+            "us",
+        )
         self.__component.add_engine(engine)
         self.__mainloop = GLib.MainLoop()
         self.__bus = IBus.Bus()
         self.__bus.connect("disconnected", self.__bus_disconnected_cb)
         self.__factory = IBus.Factory.new(self.__bus.get_connection())
-        self.__factory.add_engine("deepspeech",
-                GObject.type_from_name("EngineDeepSpeech"))
+        self.__factory.add_engine(
+            "deepspeech", GObject.type_from_name("EngineDeepSpeech")
+        )
         if exec_by_ibus:
             self.__bus.request_name("org.freedesktop.IBus.DeepSpeech", 0)
         else:
             self.__bus.register_component(self.__component)
-            self.__bus.set_global_engine_async(
-                    "deepspeech", -1, None, None, None)
+            self.__bus.set_global_engine_async("deepspeech", -1, None, None, None)
 
     def run(self):
         self.__mainloop.run()
@@ -74,17 +75,19 @@ class IMApp:
         self.__mainloop.quit()
 
 
-def launch_engine(exec_by_ibus):
+def launch_engine(exec_by_ibus: bool) -> None:
     IBus.init()
     IMApp(exec_by_ibus).run()
 
-def print_help(v = 0):
+
+def print_help(v=0):
     print("-i, --ibus             executed by IBus.")
     print("-h, --help             show this message.")
     print("-d, --daemonize        daemonize ibus")
     sys.exit(v)
 
-def main():
+
+def main() -> None:
     try:
         locale.setlocale(locale.LC_ALL, "")
     except:
@@ -117,6 +120,7 @@ def main():
             sys.exit()
 
     launch_engine(exec_by_ibus)
+
 
 if __name__ == "__main__":
     main()
