@@ -1,6 +1,8 @@
 This is a remake of the original ibus-deepspeech engine to use webrtcvad and deepspeech for speech recognition with IBus.
 
-Why?
+It's still very buggy!
+
+## Why?
 * the webrtcvad approach from Mozilla has much lower CPU usage and, consequently, latency
 
 ## Credits
