@@ -6,8 +6,12 @@ It's still very buggy!
 * the webrtcvad approach from Mozilla has much lower CPU usage and, consequently, latency
 
 ## Credits
-* Mozilla, for [DeepSpeech-examples](https://github.com/mozilla/DeepSpeech-examples),
 which was the base for the recogntion code
+* Mozilla, for [DeepSpeech-examples]
 * Elleo, for [the original project]
 
 [the original project]: https://github.com/Elleo/ibus-deepspeech
+[DeepSpeech-examples]: https://github.com/mozilla/DeepSpeech-examples
+
+## Alternatives
+You can use `mic_vad_streaming.py` from [DeepSpeech-examples] with the `-k` option.
